@@ -51,25 +51,32 @@ export default function StatistikPage() {
         const propertyType = payment.data_warga?.property_type || 'unknown';
         propertyTypeCount[propertyType] = (propertyTypeCount[propertyType] || 0) + 1;
         
-        let hasUnpaid = false;
-        let paidMonthCount = 0;
+        let statusLunas = true; // Asumsikan lunas sampai ditemukan yang belum bayar
+        let paidCount = 0;
 
         monthsKey.forEach((month, idx) => {
-          const status = String(payment[month]);
-          if (status === '0') {
-            hasUnpaid = true;
+          const value = payment[month];
+          
+          // Jika nilai adalah 0, 'N/A', null, atau undefined = belum bayar
+          if (value === 0 || value === '0' || value === 'N/A' || value === null || value === undefined) {
+            statusLunas = false;
             monthlyStats[monthsLabel[idx]].belum++;
-          } else if (status !== 'N/A' && status) {
+          } else if (value && value !== 'N/A') {
+            // Nilai > 0 berarti sudah bayar
             monthlyStats[monthsLabel[idx]].bayar++;
-            paidMonthCount++;
+            paidCount++;
+          } else {
+            monthlyStats[monthsLabel[idx]].belum++;
+            statusLunas = false;
           }
           monthlyStats[monthsLabel[idx]].total++;
         });
 
-        if (hasUnpaid) {
-          totalBelum++;
-        } else if (paidMonthCount === 12) {
+        // Jika semua bulan sudah bayar, masuk kategori Lunas
+        if (statusLunas && paidCount === 12) {
           totalLunas++;
+        } else {
+          totalBelum++;
         }
       });
 
