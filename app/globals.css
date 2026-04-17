@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --toska-dark: #008080;
+  --toska-light: #20b2aa;
+  --toska-soft: #e6f2f2;
+  --wa-green: #25d366;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #f4f7f6;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.table-container {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
+
+.bg-toska {
+  background-color: var(--toska-dark);
+}
+
+.text-toska {
+  color: var(--toska-dark);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  background-color: var(--toska-dark);
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  padding: 10px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #eee;
+  color: #444;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+tr:nth-child(even) {
+  background-color: var(--toska-soft);
+}
+
+tr:hover {
+  background-color: #d1eded;
+  transition: background-color 0.3s;
+}
+
+.search-input:focus,
+.select-input:focus {
+  outline: none;
+  border-color: var(--toska-dark);
+  box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.2);
+}
+
+.price-tag {
+  background: #fff;
+  border: 1px solid var(--toska-light);
+  color: var(--toska-dark);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: 500;
+  display: inline-block;
+  min-width: 70px;
+  font-size: 0.75rem;
+}
+
+.total-tag {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  color: #d48806;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.na-tag {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.75rem;
+}
+
+.wa-btn {
+  background-color: var(--wa-green);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.sidebar {
+  transition: all 0.3s;
+  z-index: 60;
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+}
