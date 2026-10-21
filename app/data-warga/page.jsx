@@ -12,6 +12,14 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseClient =
   supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
+// Shell modal: bottom sheet di mobile, dialog di desktop
+const SHEET_BACKDROP = "fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center";
+const SHEET_PANEL =
+  "glass-strong w-full max-h-[90vh] overflow-y-auto rounded-t-3xl p-6 sm:max-w-sm sm:rounded-3xl";
+const INPUT = "mt-1 w-full rounded-xl border border-white/70 bg-white/70 px-3 py-3 text-base outline-none focus:border-toska focus:ring-2 focus:ring-teal-600/20";
+const BTN_PRIMARY = "flex-1 rounded-xl bg-toska px-4 py-3 font-medium text-white shadow-md transition active:scale-95 disabled:opacity-50";
+const BTN_GHOST = "flex-1 rounded-xl border border-white/80 bg-white/60 px-4 py-3 font-medium text-gray-700 transition active:scale-95 disabled:opacity-50";
+
 // Modal Bulk Add Year to All Warga
 function ModalBulkYear({ onClose, onSave, allWargaData }) {
   const [selectedYears, setSelectedYears] = useState([]);
@@ -47,7 +55,7 @@ function ModalBulkYear({ onClose, onSave, allWargaData }) {
           .map((w) => w.tahun);
 
         const yearsToAdd = selectedYears.filter((y) => !existingYears.includes(y));
-        
+
         yearsToAdd.forEach((year) => {
           newRecords.push({
             no: warga.no,
@@ -102,23 +110,24 @@ function ModalBulkYear({ onClose, onSave, allWargaData }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-lg max-h-[90vh] overflow-y-auto">
-        <h2 className="mb-4 text-xl font-bold text-toska">Add Tahun ke Semua Warga</h2>
+    <div className={SHEET_BACKDROP}>
+      <div className={SHEET_PANEL}>
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-gray-300 sm:hidden" />
+        <h2 className="mb-1 text-xl font-bold text-toska">Add Tahun ke Semua Warga</h2>
         <p className="text-sm text-gray-600 mb-4">
           Pilih tahun untuk ditambahkan ke semua warga sekaligus
         </p>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">Pilih Tahun</label>
-          <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded p-3 bg-gray-50">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Tahun</label>
+          <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto rounded-xl border border-white/70 bg-white/50 p-3">
             {availableYears.map((year) => (
               <label key={year} className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={selectedYears.includes(year)}
                   onChange={() => handleYearToggle(year)}
-                  className="rounded"
+                  className="h-4 w-4 rounded accent-teal-700"
                 />
                 <span className="text-sm text-gray-700">{year}</span>
               </label>
@@ -133,17 +142,12 @@ function ModalBulkYear({ onClose, onSave, allWargaData }) {
           <button
             onClick={handleAddToAll}
             disabled={loading}
-            className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-white font-medium hover:bg-green-700 disabled:opacity-50"
+            className="flex-1 rounded-xl bg-green-600 px-4 py-3 font-medium text-white shadow-md transition active:scale-95 hover:bg-green-700 disabled:opacity-50"
             type="button"
           >
             {loading ? "Proses..." : "Tambahkan ke Semua"}
           </button>
-          <button
-            onClick={onClose}
-            disabled={loading}
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50"
-            type="button"
-          >
+          <button onClick={onClose} disabled={loading} className={BTN_GHOST} type="button">
             Batal
           </button>
         </div>
@@ -261,8 +265,9 @@ function ModalWarga({ warga, onClose, onSave, allNos, allWargaData }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-lg max-h-[90vh] overflow-y-auto">
+    <div className={SHEET_BACKDROP}>
+      <div className={SHEET_PANEL}>
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-gray-300 sm:hidden" />
         <h2 className="mb-4 text-xl font-bold text-toska">
           {warga ? "Edit Data Warga" : "Tambah Data Warga"}
         </h2>
@@ -275,7 +280,7 @@ function ModalWarga({ warga, onClose, onSave, allNos, allWargaData }) {
               name="nama"
               value={formData.nama || ""}
               onChange={handleChange}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+              className={INPUT}
             />
           </div>
 
@@ -287,7 +292,7 @@ function ModalWarga({ warga, onClose, onSave, allNos, allWargaData }) {
               value={formData.blok || ""}
               onChange={handleChange}
               placeholder="Contoh: C1/12, RK/04"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+              className={INPUT}
             />
           </div>
 
@@ -298,7 +303,7 @@ function ModalWarga({ warga, onClose, onSave, allNos, allWargaData }) {
               name="no_hp"
               value={formData.no_hp || ""}
               onChange={handleChange}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+              className={INPUT}
             />
           </div>
 
@@ -308,7 +313,7 @@ function ModalWarga({ warga, onClose, onSave, allNos, allWargaData }) {
               name="property_type"
               value={formData.property_type || "rumah"}
               onChange={handleChange}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+              className={INPUT}
             >
               <option value="rumah">🏠 Rumah (IPL 100k, Sampah 30k)</option>
               <option value="ruko">🏬 Ruko (IPL 120k, Sampah 50k)</option>
@@ -320,11 +325,11 @@ function ModalWarga({ warga, onClose, onSave, allNos, allWargaData }) {
               {warga ? "Tahun Pembayaran" : "Tahun Pendaftaran"}
             </label>
             {warga && existingYears.length > 0 && (
-              <div className="mb-2 p-2 bg-blue-50 rounded border border-blue-200 text-xs text-blue-700">
+              <div className="mb-2 rounded-xl border border-blue-200 bg-blue-50/80 p-2 text-xs text-blue-700">
                 Sudah ada: {existingYears.join(", ")}
               </div>
             )}
-            <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto border border-gray-200 rounded p-2">
+            <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto rounded-xl border border-white/70 bg-white/50 p-2">
               {availableYears.map((year) => {
                 const isExisting = existingYears.includes(year);
                 return (
@@ -334,7 +339,7 @@ function ModalWarga({ warga, onClose, onSave, allNos, allWargaData }) {
                       checked={selectedYears.includes(year) || isExisting}
                       onChange={() => !isExisting && handleYearToggle(year)}
                       disabled={isExisting}
-                      className="rounded disabled:opacity-50"
+                      className="h-4 w-4 rounded accent-teal-700 disabled:opacity-50"
                     />
                     <span className={`text-xs ${isExisting ? "text-gray-400 line-through" : "text-gray-700"}`}>
                       {year}
@@ -352,25 +357,28 @@ function ModalWarga({ warga, onClose, onSave, allNos, allWargaData }) {
         </div>
 
         <div className="mt-6 flex gap-3">
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="flex-1 rounded-lg bg-toska px-4 py-2 text-white font-medium hover:opacity-80 disabled:opacity-50"
-            type="button"
-          >
+          <button onClick={handleSave} disabled={loading} className={BTN_PRIMARY} type="button">
             {loading ? "Menyimpan..." : "Simpan"}
           </button>
-          <button
-            onClick={onClose}
-            disabled={loading}
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50"
-            type="button"
-          >
+          <button onClick={onClose} disabled={loading} className={BTN_GHOST} type="button">
             Batal
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+function PropertyBadge({ type }) {
+  if (!type) return <span className="text-xs italic text-gray-400">-</span>;
+  return (
+    <span
+      className={`inline-block rounded-lg px-2.5 py-1 text-xs font-medium text-white shadow-sm ${
+        type === "ruko" ? "bg-blue-600" : "bg-green-600"
+      }`}
+    >
+      {type === "ruko" ? "🏬 Ruko" : "🏠 Rumah"}
+    </span>
   );
 }
 
@@ -492,6 +500,21 @@ export default function DataWargaPage() {
     }
   }
 
+  async function openCostConfig(warga) {
+    const configs = await fetchWargaCostConfigs(warga.id, selectedYear);
+    setWargaCostConfigs(prev => ({
+      ...prev,
+      [`${warga.id}-${selectedYear}`]: configs
+    }));
+    setEditingWarga(warga);
+    setShowCostConfigModal(true);
+  }
+
+  function openEdit(warga) {
+    setEditingWarga(warga);
+    setShowModal(true);
+  }
+
   useEffect(() => {
     fetchWarga();
     fetchCostSettings();
@@ -504,58 +527,84 @@ export default function DataWargaPage() {
     }
   }, [wargaList, selectedYear]);
 
+  // Ringkasan biaya per warga, dipakai di kartu mobile dan baris tabel desktop
+  const getCostInfo = (warga) => {
+    const costConfig = wargaCostConfigs[`${warga.id}-${selectedYear}`] || [];
+    const monthlyCost = costConfig.length > 0
+      ? calculateMonthlyCost(1, selectedYear, costConfig, costSettings)
+      : 0;
+    const label = costConfig.length > 0
+      ? costConfig[0].has_ipl && costConfig[0].has_sampah
+        ? "IPL + Sampah"
+        : costConfig[0].has_ipl
+        ? "IPL"
+        : "Sampah"
+      : null;
+    return { hasConfig: costConfig.length > 0, monthlyCost, label };
+  };
+
   return (
     <ProtectedRoute>
       <LayoutWithSidebar currentPage="data-warga">
-      <div className="flex-1 overflow-y-auto p-4 md:p-8">
-        <div className="mx-auto max-w-4xl">
-          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-toska">Data Warga</h1>
-              <p className="text-gray-600">Master data warga yang stabil di semua tahun</p>
-            </div>
-            <div className="flex gap-2 flex-col md:flex-row">
-              <button
-                onClick={() => {
-                  setEditingWarga(null);
-                  setShowModal(true);
-                }}
-                className="rounded-lg bg-toska px-4 py-2 text-white font-medium hover:opacity-80"
-                type="button"
-              >
-                + Tambah Warga
-              </button>
-              <button
-                onClick={() => setShowBulkModal(true)}
-                className="rounded-lg bg-green-600 px-4 py-2 text-white font-medium hover:opacity-90"
-                type="button"
-              >
-                📅 Add Tahun ke Semua
-              </button>
-            </div>
+      <div className="mx-auto w-full max-w-5xl px-4 pb-6 pt-5 md:px-8 md:pt-8">
+          <div className="mb-5">
+            <h1 className="text-2xl font-bold text-toska">Data Warga</h1>
+            <p className="text-sm text-gray-600">Master data warga yang stabil di semua tahun</p>
           </div>
 
-          {error && <div className="mb-4 rounded-lg bg-red-100 p-4 text-red-700">{error}</div>}
+          <div className="mb-4 grid grid-cols-2 gap-2 md:flex md:justify-end">
+            <button
+              onClick={() => {
+                setEditingWarga(null);
+                setShowModal(true);
+              }}
+              className="rounded-xl bg-toska px-4 py-3 text-sm font-medium text-white shadow-md transition active:scale-95 md:py-2"
+              type="button"
+            >
+              + Tambah Warga
+            </button>
+            <button
+              onClick={() => setShowBulkModal(true)}
+              className="rounded-xl bg-green-600 px-4 py-3 text-sm font-medium text-white shadow-md transition active:scale-95 hover:opacity-90 md:py-2"
+              type="button"
+            >
+              <span className="md:hidden">📅 Add Tahun</span>
+              <span className="hidden md:inline">📅 Add Tahun ke Semua</span>
+            </button>
+          </div>
 
-          <div className="mb-4 flex gap-4 flex-col md:flex-row md:items-end">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Cari nama warga..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 pl-10"
-              />
-              <svg className="absolute left-3 top-10 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {error && (
+            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50/80 p-4 text-sm text-red-700 backdrop-blur">
+              {error}
+            </div>
+          )}
+
+          <div className="glass mb-4 flex flex-col gap-3 rounded-2xl p-3 md:flex-row md:items-end">
+            <div className="relative flex-1">
+              <svg
+                className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
+              <input
+                type="text"
+                placeholder="Cari nama atau blok..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-xl border border-white/70 bg-white/70 py-3 pl-10 pr-4 text-base outline-none focus:border-toska focus:ring-2 focus:ring-teal-600/20"
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Tahun Konfigurasi Biaya</label>
+            <div className="flex items-center justify-between gap-3 md:block">
+              <label className="block text-xs font-medium text-gray-600 md:mb-1 md:text-sm">
+                Tahun Konfigurasi Biaya
+              </label>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="rounded-lg border border-gray-300 px-4 py-2"
+                className="rounded-xl border border-white/70 bg-white/70 px-3 py-2.5 text-base outline-none"
               >
                 {Array.from({ length: 26 }, (_, i) => 2025 + i).map(year => (
                   <option key={year} value={year}>{year}</option>
@@ -564,125 +613,164 @@ export default function DataWargaPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-gray-200 shadow">
-            <table className="w-full border-collapse">
-              <thead className="bg-toska text-white">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium">No</th>
-                  <th className="px-4 py-3 text-left font-medium">Nama</th>
-                  <th className="px-4 py-3 text-left font-medium">Blok</th>
-                  <th className="px-4 py-3 text-left font-medium">Jenis Properti</th>
-                  <th className="px-4 py-3 text-left font-medium">No. HP</th>
-                  <th className="px-4 py-3 text-left font-medium">Biaya ({selectedYear})</th>
-                  <th className="px-4 py-3 text-center font-medium">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="6" className="py-8 text-center text-gray-400">
-                      Memuat...
-                    </td>
-                  </tr>
-                ) : wargaList.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="py-8 text-center text-gray-400">
-                      Tidak ada data warga
-                    </td>
-                  </tr>
-                ) : (
-                  wargaList.map((warga) => {
-                    const costConfig = wargaCostConfigs[`${warga.id}-${selectedYear}`] || [];
-                    const monthlyCost = costConfig.length > 0 
-                      ? calculateMonthlyCost(1, selectedYear, costConfig, costSettings)
-                      : 0;
-                    return (
-                      <tr key={warga.id} className="border-b hover:bg-gray-50">
-                        <td className="px-4 py-3 font-semibold text-gray-900">{warga.no}</td>
-                        <td className="px-4 py-3 font-semibold text-gray-900">{warga.nama}</td>
-                        <td className="px-4 py-3 text-gray-700">
-                          <span className="inline-block rounded bg-gray-200 px-2 py-1 font-mono text-sm text-gray-800">
-                            {warga.blok}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          {warga.property_type ? (
-                            <span className={`inline-block rounded px-3 py-1 text-white font-medium ${
-                              warga.property_type === 'ruko' 
-                                ? 'bg-blue-600' 
-                                : 'bg-green-600'
-                            }`}>
-                              {warga.property_type === 'ruko' ? '🏬 Ruko' : '🏠 Rumah'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 italic text-xs">-</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-gray-700">{warga.no_hp || "-"}</td>
-                        <td className="px-4 py-3 text-sm">
-                          {costConfig.length > 0 ? (
-                            <div className="text-gray-700">
-                              <p className="font-medium">{monthlyCost.toLocaleString('id-ID')}</p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {costConfig[0].has_ipl && costConfig[0].has_sampah 
-                                  ? 'IPL + Sampah' 
-                                  : costConfig[0].has_ipl 
-                                  ? 'IPL' 
-                                  : 'Sampah'}
-                              </p>
-                            </div>
-                          ) : (
-                            <p className="text-gray-400 italic">Belum diatur</p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-2 justify-center flex-wrap">
-                            <button
-                              onClick={async () => {
-                                const configs = await fetchWargaCostConfigs(warga.id, selectedYear);
-                                setWargaCostConfigs(prev => ({
-                                  ...prev,
-                                  [`${warga.id}-${selectedYear}`]: configs
-                                }));
-                                setEditingWarga(warga);
-                                setShowCostConfigModal(true);
-                              }}
-                              className="rounded bg-purple-500 px-3 py-1 text-sm text-white hover:bg-purple-600 whitespace-nowrap"
-                              type="button"
-                            >
-                              💰 Biaya
-                            </button>
-                            <button
-                              onClick={() => {
-                                setEditingWarga(warga);
-                                setShowModal(true);
-                              }}
-                              className="rounded bg-blue-500 px-3 py-1 text-sm text-white hover:bg-blue-600 whitespace-nowrap"
-                              type="button"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(warga.id)}
-                              className="rounded bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600 whitespace-nowrap"
-                              type="button"
-                            >
-                              Hapus
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+          {/* Mobile: kartu */}
+          <div className="space-y-3 md:hidden">
+            {loading ? (
+              <p className="glass rounded-2xl p-6 text-center text-gray-500">Memuat...</p>
+            ) : wargaList.length === 0 ? (
+              <p className="glass rounded-2xl p-6 text-center text-gray-500">Tidak ada data warga</p>
+            ) : (
+              wargaList.map((warga) => {
+                const { hasConfig, monthlyCost, label } = getCostInfo(warga);
+                return (
+                  <article key={warga.id} className="glass rounded-2xl p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs text-gray-500">No. {warga.no}</p>
+                        <h3 className="truncate text-base font-semibold text-gray-900">{warga.nama}</h3>
+                      </div>
+                      <span className="shrink-0 rounded-lg bg-white/70 px-2 py-1 font-mono text-xs text-gray-800">
+                        {warga.blok}
+                      </span>
+                    </div>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                      <PropertyBadge type={warga.property_type} />
+                      <span>📞 {warga.no_hp || "-"}</span>
+                    </div>
+
+                    <div className="mt-3 rounded-xl bg-white/50 p-3">
+                      <p className="text-[11px] uppercase tracking-wide text-gray-500">Biaya {selectedYear}</p>
+                      {hasConfig ? (
+                        <p className="text-sm font-semibold text-gray-900">
+                          Rp {monthlyCost.toLocaleString("id-ID")}
+                          <span className="ml-1 text-xs font-normal text-gray-500">/ bulan · {label}</span>
+                        </p>
+                      ) : (
+                        <p className="text-sm italic text-gray-400">Belum diatur</p>
+                      )}
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => openCostConfig(warga)}
+                        className="rounded-xl bg-purple-500 py-2 text-sm font-medium text-white shadow-sm transition active:scale-95"
+                        type="button"
+                      >
+                        💰 Biaya
+                      </button>
+                      <button
+                        onClick={() => openEdit(warga)}
+                        className="rounded-xl bg-blue-500 py-2 text-sm font-medium text-white shadow-sm transition active:scale-95"
+                        type="button"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(warga.id)}
+                        className="rounded-xl bg-red-500 py-2 text-sm font-medium text-white shadow-sm transition active:scale-95"
+                        type="button"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
+            )}
           </div>
 
-          <div className="mt-4 text-sm text-gray-600">
+          {/* Desktop: tabel */}
+          <div className="glass hidden overflow-hidden rounded-2xl md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead className="bg-toska text-white">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium">No</th>
+                    <th className="px-4 py-3 text-left font-medium">Nama</th>
+                    <th className="px-4 py-3 text-left font-medium">Blok</th>
+                    <th className="px-4 py-3 text-left font-medium">Jenis Properti</th>
+                    <th className="px-4 py-3 text-left font-medium">No. HP</th>
+                    <th className="px-4 py-3 text-left font-medium">Biaya ({selectedYear})</th>
+                    <th className="px-4 py-3 text-center font-medium">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="7" className="py-8 text-center text-gray-400">
+                        Memuat...
+                      </td>
+                    </tr>
+                  ) : wargaList.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="py-8 text-center text-gray-400">
+                        Tidak ada data warga
+                      </td>
+                    </tr>
+                  ) : (
+                    wargaList.map((warga) => {
+                      const { hasConfig, monthlyCost, label } = getCostInfo(warga);
+                      return (
+                        <tr key={warga.id} className="border-b border-white/60 hover:bg-white/40">
+                          <td className="px-4 py-3 font-semibold text-gray-900">{warga.no}</td>
+                          <td className="px-4 py-3 font-semibold text-gray-900">{warga.nama}</td>
+                          <td className="px-4 py-3 text-gray-700">
+                            <span className="inline-block rounded-lg bg-white/70 px-2 py-1 font-mono text-sm text-gray-800">
+                              {warga.blok}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <PropertyBadge type={warga.property_type} />
+                          </td>
+                          <td className="px-4 py-3 text-gray-700">{warga.no_hp || "-"}</td>
+                          <td className="px-4 py-3 text-sm">
+                            {hasConfig ? (
+                              <div className="text-gray-700">
+                                <p className="font-medium">{monthlyCost.toLocaleString("id-ID")}</p>
+                                <p className="mt-1 text-xs text-gray-500">{label}</p>
+                              </div>
+                            ) : (
+                              <p className="text-gray-400 italic">Belum diatur</p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap justify-center gap-2">
+                              <button
+                                onClick={() => openCostConfig(warga)}
+                                className="whitespace-nowrap rounded-lg bg-purple-500 px-3 py-1 text-sm text-white transition hover:bg-purple-600"
+                                type="button"
+                              >
+                                💰 Biaya
+                              </button>
+                              <button
+                                onClick={() => openEdit(warga)}
+                                className="whitespace-nowrap rounded-lg bg-blue-500 px-3 py-1 text-sm text-white transition hover:bg-blue-600"
+                                type="button"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDelete(warga.id)}
+                                className="whitespace-nowrap rounded-lg bg-red-500 px-3 py-1 text-sm text-white transition hover:bg-red-600"
+                                type="button"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="mt-4 text-center text-sm text-gray-600 md:text-left">
             Total: {wargaList.length} data warga
           </div>
-        </div>
       </div>
 
       {showModal && (

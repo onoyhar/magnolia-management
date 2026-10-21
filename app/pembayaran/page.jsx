@@ -14,6 +14,14 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseClient =
   supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
+// Shell modal: bottom sheet di mobile, dialog di desktop
+const SHEET_BACKDROP = "fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center";
+const SHEET_PANEL =
+  "glass-strong w-full max-h-[90vh] overflow-y-auto rounded-t-3xl p-6 sm:max-w-lg sm:rounded-3xl";
+const INPUT = "w-full rounded-xl border border-white/70 bg-white/70 px-3 py-2.5 font-mono text-base outline-none focus:border-toska focus:ring-2 focus:ring-teal-600/20";
+const BTN_PRIMARY = "flex-1 rounded-xl bg-toska px-4 py-3 font-medium text-white shadow-md transition active:scale-95";
+const BTN_GHOST = "flex-1 rounded-xl border border-white/80 bg-white/60 px-4 py-3 font-medium text-gray-700 transition active:scale-95";
+
 function formatRupiah(number) {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -27,7 +35,7 @@ function calculateTotal(row, monthIdx, costConfigs, costSettings) {
   if (row.nama && row.nama.includes('Prasindo')) {
     console.log(`[DEBUG] ${row.nama} - costConfigs:`, costConfigs, 'costSettings:', costSettings);
   }
-  
+
   // If there's a cost config for this warga+tahun, use it
   if (costConfigs && costConfigs.length > 0) {
     // For the next months, calculate using the cost config
@@ -47,7 +55,7 @@ function calculateTotal(row, monthIdx, costConfigs, costSettings) {
     }
     return total;
   }
-  
+
   // Fallback to old logic if no cost config
   if (row.nama && row.nama.includes('Prasindo')) {
     console.log(`[DEBUG] ${row.nama} using FALLBACK (no configs)`);
@@ -83,7 +91,7 @@ function generateWAMessage(warga, totalDue, year, months) {
     .join(", ");
 
   const message = `Halo ${warga.nama}, kami ingin mengingatkan bahwa ada tagihan IPL yang belum dibayar untuk tahun ${year}.\n\n📌 Detail:\n- Lokasi: Blok ${warga.blok}\n- Bulan: ${months_unpaid}\n- Total: Rp${totalDue.toLocaleString('id-ID')}\n\n💳 Silakan transfer ke:\nRekening: BSI 7309005826\na.n. CLUSTER MAGNOLIA BURADEN\n\nMohon segera melakukan pembayaran. Terima kasih.`;
-  
+
   return message;
 }
 
@@ -98,7 +106,7 @@ function generateWALink(phoneNumber, message) {
     phone = '0' + phone; // tambah 0 jika belum ada
   }
   phone = '62' + phone.substring(1); // rubah 0 jadi 62
-  
+
   const encodedMessage = encodeURIComponent(message);
   return `https://wa.me/${phone}?text=${encodedMessage}`;
 }
@@ -145,23 +153,26 @@ function ModalEditPembayaran({ row, onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-        <h2 className="mb-4 text-xl font-bold text-toska">💳 Edit Pembayaran - {formData.nama}</h2>
-        <p className="text-xs text-gray-500 mb-4">Masukkan angka (otomatis format) atau N/A</p>
+    <div className={SHEET_BACKDROP}>
+      <div className={SHEET_PANEL}>
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-gray-300 sm:hidden" />
+        <h2 className="mb-1 text-lg font-bold text-toska">💳 Edit Pembayaran</h2>
+        <p className="mb-4 text-sm text-gray-600">{formData.nama}</p>
+        <p className="mb-4 text-xs text-gray-500">Masukkan angka (otomatis format) atau N/A</p>
 
-        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {monthsKey.map((month, idx) => (
             <div key={month}>
               <label className="block text-sm font-medium text-gray-700">{monthsLabel[idx]}</label>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-gray-500">Rp</span>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="text-sm text-gray-500">Rp</span>
                 <input
                   type="text"
+                  inputMode="numeric"
                   value={displayValues[month] || ""}
                   onChange={(e) => handleChange(month, e.target.value)}
                   placeholder="0 atau N/A"
-                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono"
+                  className={INPUT}
                 />
               </div>
             </div>
@@ -169,22 +180,46 @@ function ModalEditPembayaran({ row, onClose, onSave }) {
         </div>
 
         <div className="mt-6 flex gap-3">
-          <button
-            onClick={handleSave}
-            className="flex-1 rounded-lg bg-toska px-4 py-2 text-white font-medium hover:opacity-80"
-            type="button"
-          >
+          <button onClick={handleSave} className={`${BTN_PRIMARY} hover:opacity-90`} type="button">
             Simpan
           </button>
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 font-medium hover:bg-gray-50"
-            type="button"
-          >
+          <button onClick={onClose} className={BTN_GHOST} type="button">
             Batal
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Satu sel bulan: N/A, Belum (0), atau nominal yang sudah dibayar
+function MonthChip({ label, status }) {
+  let tone;
+  let text;
+  if (status === "N/A" || !status) {
+    tone = "bg-gray-100 text-gray-400";
+    text = "N/A";
+  } else if (String(status) === "0") {
+    tone = "bg-red-100 text-red-600";
+    text = "Belum";
+  } else {
+    tone = "bg-emerald-100 text-emerald-700";
+    text = parseInt(status).toLocaleString("id-ID");
+  }
+
+  return (
+    <div className={`rounded-lg px-1 py-1.5 text-center ${tone}`}>
+      <p className="text-[10px] font-medium uppercase opacity-70">{label}</p>
+      <p className="truncate text-[11px] font-semibold">{text}</p>
+    </div>
+  );
+}
+
+function StatTile({ label, value, tone }) {
+  return (
+    <div className="glass rounded-2xl p-3">
+      <p className="text-[11px] uppercase tracking-wide text-gray-500">{label}</p>
+      <p className={`mt-0.5 truncate text-base font-bold md:text-xl ${tone}`}>{value}</p>
     </div>
   );
 }
@@ -215,7 +250,7 @@ export default function PembayaranPage() {
         .order("data_warga(no)", { ascending: true });
 
       if (err) throw err;
-      
+
       // Flatten the response to match expected structure
       const flatData = (data || []).map(row => ({
         id: row.warga_id,
@@ -238,16 +273,16 @@ export default function PembayaranPage() {
         nov: row.nov,
         des: row.des,
       }));
-      
+
       setAllData(flatData);
-      
+
       // Fetch cost configs in ONE query instead of per-warga (PERFORMANCE FIX)
       if (flatData && flatData.length > 0) {
         const configsMap = {};
-        
+
         // Get all unique warga IDs
         const wargaIds = flatData.map(r => r.id);
-        
+
         // Fetch ALL cost configs in one query
         const { data: allConfigs, error: configErr } = await supabaseClient
           .from("warga_cost_config")
@@ -266,7 +301,7 @@ export default function PembayaranPage() {
             configsMap[key].push(config);
           });
         }
-        
+
         setWargaCostConfigs(configsMap);
       }
     } catch (err) {
@@ -329,94 +364,190 @@ export default function PembayaranPage() {
     });
   }, [allData, search, year]);
 
+  // Hitung total tagihan per baris sekali, dipakai di kartu, tabel, dan ringkasan
+  const rows = useMemo(
+    () =>
+      filteredData.map((row) => {
+        const costConfigs = wargaCostConfigs[`${row.id}-${year}`] || [];
+        const totalDue = calculateTotal(row, 0, costConfigs, costSettings);
+        return { row, totalDue };
+      }),
+    [filteredData, wargaCostConfigs, costSettings, year]
+  );
+
+  const summary = useMemo(() => {
+    const lunas = rows.filter((r) => r.totalDue === 0).length;
+    const totalTagihan = rows.reduce((acc, r) => acc + r.totalDue, 0);
+    return { lunas, belum: rows.length - lunas, totalTagihan };
+  }, [rows]);
+
+  const colSpan = monthsKey.length + 5;
+
   return (
     <ProtectedRoute>
       <LayoutWithSidebar currentPage="pembayaran">
-      <div className="flex-1 overflow-y-auto p-4 md:p-8">
-        <div className="mx-auto max-w-full">
-          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-toska">Daftar Pembayaran Iuran</h1>
-              <p className="text-gray-600">Manajemen pembayaran iuran per tahun</p>
-            </div>
+      <div className="mx-auto w-full max-w-6xl px-4 pb-6 pt-5 md:px-8 md:pt-8">
+          <div className="mb-5">
+            <h1 className="text-2xl font-bold text-toska">Daftar Pembayaran Iuran</h1>
+            <p className="text-sm text-gray-600">Manajemen pembayaran iuran per tahun</p>
+          </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  console.log('Refreshing pembayaran data...');
-                  fetchData();
-                }}
-                className="rounded-lg bg-green-500 px-4 py-2 text-white cursor-pointer hover:bg-green-600 text-sm font-medium"
-                title="Refresh data & biaya (untuk sync dengan Data Warga)"
-                type="button"
+          {/* Ringkasan */}
+          <div className="mb-4 grid grid-cols-3 gap-2 md:gap-3">
+            <StatTile label="Warga" value={rows.length} tone="text-gray-900" />
+            <StatTile label="Lunas" value={`${summary.lunas} / ${rows.length}`} tone="text-emerald-700" />
+            <StatTile label="Tagihan" value={formatRupiah(summary.totalTagihan)} tone="text-amber-700" />
+          </div>
+
+          {/* Filter */}
+          <div className="glass mb-4 flex flex-col gap-3 rounded-2xl p-3 md:flex-row md:items-center">
+            <div className="relative flex-1">
+              <svg
+                className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                🔄 Refresh
-              </button>
-              
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Cari nama atau blok..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-xl border border-white/70 bg-white/70 py-3 pl-10 pr-4 text-base outline-none focus:border-toska focus:ring-2 focus:ring-teal-600/20"
+              />
+            </div>
+            <div className="grid grid-cols-[1fr_auto_auto] gap-2">
               <select
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                className="rounded-lg border border-gray-300 px-4 py-2 bg-white cursor-pointer"
+                className="rounded-xl border border-white/70 bg-white/70 px-3 py-3 text-base outline-none"
               >
                 <option value="2026">Tahun 2026</option>
                 <option value="2025">Tahun 2025</option>
               </select>
-
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Cari nama atau blok..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="rounded-lg border border-gray-300 px-4 py-2 pl-10"
-                />
-                <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
+              <button
+                onClick={() => fetchData()}
+                className="rounded-xl bg-green-500 px-4 py-3 text-sm font-medium text-white shadow-md transition active:scale-95 hover:bg-green-600"
+                title="Refresh data & biaya (untuk sync dengan Data Warga)"
+                type="button"
+              >
+                🔄
+              </button>
             </div>
           </div>
 
-          {error && <div className="mb-4 rounded-lg bg-red-100 p-4 text-red-700">{error}</div>}
+          {error && (
+            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50/80 p-4 text-sm text-red-700 backdrop-blur">
+              {error}
+            </div>
+          )}
 
-          <div className="overflow-x-auto rounded-lg border border-gray-200 shadow">
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-toska text-white">
-                <tr>
-                  <th className="px-3 py-2 text-left font-medium min-w-[120px]">Nama</th>
-                  <th className="px-3 py-2 text-left font-medium">Blok</th>
-                  {monthsKey.map((m, i) => (
-                    <th key={m} className="px-2 py-2 text-center font-medium text-xs">
-                      {monthsLabel[i].slice(0, 3)}
-                    </th>
-                  ))}
-                  <th className="px-3 py-2 text-center font-bold bg-amber-500 text-white">TOTAL<br/>TAGIHAN</th>
-                  <th className="px-3 py-2 text-center font-medium">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
+          {/* Mobile: kartu per warga */}
+          <div className="space-y-3 md:hidden">
+            {loading ? (
+              <p className="glass rounded-2xl p-6 text-center text-gray-500">Memuat...</p>
+            ) : rows.length === 0 ? (
+              <p className="glass rounded-2xl p-6 text-center text-gray-500">Tidak ada data tahun {year}</p>
+            ) : (
+              rows.map(({ row, totalDue }) => (
+                <article key={row.id} className="glass rounded-2xl p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-base font-semibold text-gray-900">{row.nama}</h3>
+                      <p className="text-xs text-gray-500">No. {row.no ?? "-"}</p>
+                    </div>
+                    <span className="shrink-0 rounded-lg bg-white/70 px-2 py-1 font-mono text-xs text-gray-800">
+                      {row.blok}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between rounded-xl border border-amber-300/60 bg-amber-100/70 px-3 py-2">
+                    <span className="text-xs font-medium text-amber-800">Total tagihan</span>
+                    {totalDue > 0 ? (
+                      <span className="text-base font-bold text-amber-900">{formatRupiah(totalDue)}</span>
+                    ) : (
+                      <span className="text-sm font-semibold text-emerald-600">✓ Lunas</span>
+                    )}
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-4 gap-1.5">
+                    {monthsKey.map((month, i) => (
+                      <MonthChip key={month} label={monthsLabel[i].slice(0, 3)} status={row[month]} />
+                    ))}
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {totalDue > 0 && row.no_hp ? (
+                      <a
+                        href={generateWALink(row.no_hp, generateWAMessage(row, totalDue, year, monthsKey))}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-xl bg-green-500 py-2 text-center text-sm font-medium text-white shadow-sm transition active:scale-95"
+                        title="Kirim reminder WA"
+                      >
+                        💬 WA
+                      </a>
+                    ) : (
+                      <span className="rounded-xl bg-gray-200/70 py-2 text-center text-sm text-gray-400">💬 WA</span>
+                    )}
+                    <button
+                      onClick={() => setEditingRow(row)}
+                      className="rounded-xl bg-blue-500 py-2 text-sm font-medium text-white shadow-sm transition active:scale-95"
+                      type="button"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(row.id)}
+                      className="rounded-xl bg-red-500 py-2 text-sm font-medium text-white shadow-sm transition active:scale-95"
+                      type="button"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+
+          {/* Desktop: tabel */}
+          <div className="glass hidden overflow-hidden rounded-2xl md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead className="bg-toska text-white">
                   <tr>
-                    <td colSpan={monthsKey.length + 5} className="py-8 text-center text-gray-400">
-                      Memuat...
-                    </td>
+                    <th className="px-3 py-2 text-left font-medium min-w-[120px]">Nama</th>
+                    <th className="px-3 py-2 text-left font-medium">Blok</th>
+                    {monthsKey.map((m, i) => (
+                      <th key={m} className="px-2 py-2 text-center font-medium text-xs">
+                        {monthsLabel[i].slice(0, 3)}
+                      </th>
+                    ))}
+                    <th className="px-3 py-2 text-center font-bold bg-amber-500 text-white">TOTAL<br/>TAGIHAN</th>
+                    <th className="px-3 py-2 text-center font-medium">Aksi</th>
                   </tr>
-                ) : filteredData.length === 0 ? (
-                  <tr>
-                    <td colSpan={monthsKey.length + 5} className="py-8 text-center text-gray-400">
-                      Tidak ada data tahun {year}
-                    </td>
-                  </tr>
-                ) : (
-                  filteredData.map((row) => {
-                    const costKey = `${row.id}-${year}`;
-                    const costConfigs = wargaCostConfigs[costKey] || [];
-                    const totalDue = calculateTotal(row, 0, costConfigs, costSettings);
-                    return (
-                      <tr key={row.id} className="border-b hover:bg-gray-50">
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={colSpan} className="py-8 text-center text-gray-400">
+                        Memuat...
+                      </td>
+                    </tr>
+                  ) : rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={colSpan} className="py-8 text-center text-gray-400">
+                        Tidak ada data tahun {year}
+                      </td>
+                    </tr>
+                  ) : (
+                    rows.map(({ row, totalDue }) => (
+                      <tr key={row.id} className="border-b border-white/60 hover:bg-white/40">
                         <td className="px-3 py-2 font-semibold text-gray-900">{row.nama}</td>
                         <td className="px-3 py-2 text-gray-700">
-                          <span className="inline-block rounded bg-gray-200 px-2 py-1 font-mono text-xs text-gray-800">
+                          <span className="inline-block rounded-lg bg-white/70 px-2 py-1 font-mono text-xs text-gray-800">
                             {row.blok}
                           </span>
                         </td>
@@ -436,25 +567,24 @@ export default function PembayaranPage() {
                             </td>
                           );
                         })}
-                        <td className="px-3 py-3 text-center font-bold bg-amber-100 border-l-4 border-amber-500">
+                        <td className="px-3 py-3 text-center font-bold bg-amber-100/80 border-l-4 border-amber-500">
                           {totalDue > 0 ? (
                             <div className="flex flex-col items-center">
                               <span className="text-xs text-amber-700 font-medium">Rp</span>
                               <span className="text-lg text-amber-900 font-bold">{totalDue.toLocaleString('id-ID')}</span>
-                              {totalDue === 0 && <span className="text-xs text-green-600">Lunas</span>}
                             </div>
                           ) : (
                             <span className="text-sm font-semibold text-green-600">✓ Lunas</span>
                           )}
                         </td>
                         <td className="px-3 py-2">
-                          <div className="flex gap-2 justify-center flex-wrap">
+                          <div className="flex flex-wrap justify-center gap-2">
                             {totalDue > 0 && row.no_hp && (
                               <a
                                 href={generateWALink(row.no_hp, generateWAMessage(row, totalDue, year, monthsKey))}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="rounded bg-green-500 px-2 py-1 text-xs text-white hover:bg-green-600 whitespace-nowrap"
+                                className="whitespace-nowrap rounded-lg bg-green-500 px-2 py-1 text-xs text-white transition hover:bg-green-600"
                                 title="Kirim reminder WA"
                               >
                                 💬 WA
@@ -462,14 +592,14 @@ export default function PembayaranPage() {
                             )}
                             <button
                               onClick={() => setEditingRow(row)}
-                              className="rounded bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600"
+                              className="rounded-lg bg-blue-500 px-2 py-1 text-xs text-white transition hover:bg-blue-600"
                               type="button"
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => handleDelete(row.id)}
-                              className="rounded bg-red-500 px-2 py-1 text-xs text-white hover:bg-red-600"
+                              className="rounded-lg bg-red-500 px-2 py-1 text-xs text-white transition hover:bg-red-600"
                               type="button"
                             >
                               Hapus
@@ -477,17 +607,16 @@ export default function PembayaranPage() {
                           </div>
                         </td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div className="mt-4 text-sm text-gray-600">
+          <div className="mt-4 text-center text-sm text-gray-600 md:text-left">
             Menampilkan {filteredData.length} data | Total warga: {allData.length}
           </div>
-        </div>
       </div>
 
       {editingRow && (
